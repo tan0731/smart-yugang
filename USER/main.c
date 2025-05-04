@@ -13,270 +13,274 @@
 #include "MOTOR.h"
 #include <stdlib.h>
 
-int miao_flag=0,fen_flag=1,shi_flag=0; 
-bool usart_send_flag=0;
-int PH1,PH2;
-extern int miao,fen,shi;
-short temperature = 0;//ÎÂ¶È
-u8 setN = 0;//ÉèÖÃ±êÖ¾
-u16 Wrtb_Max = 3000;//Ë®×Ç¶È±¨¾¯Öµ
-u8 T_max = 40;//ÎÂ¶È±¨¾¯Öµ
-u8 led=0;
-float PH  = 0.0;
-char send_data[]="Wrtb:0000,Temp:00.0C\r\n";
+int miao_flag = 0, fen_flag = 1, shi_flag = 0;
+bool usart_send_flag = 0;
+int PH1, PH2;
+extern int miao, fen, shi;
+short temperature = 0; // ï¿½Â¶ï¿½
+u8 setN = 0;		   // ï¿½ï¿½ï¿½Ã±ï¿½Ö¾
+u16 Wrtb_Max = 3000;   // Ë®ï¿½Ç¶È±ï¿½ï¿½ï¿½Öµ
+u8 T_max = 40;		   // ï¿½Â¶È±ï¿½ï¿½ï¿½Öµ
+u8 led = 0;
+float PH = 0.0;
+char send_data[] = "Wrtb:0000,Temp:00.0C\r\n";
 unsigned int cnt;
 float T;
 char buffer[10];
-unsigned char Alarm_Buf[16]="Warning";
+unsigned char Alarm_Buf[16] = "Warning";
 char buf[30];
 long int adcx = 0;
 unsigned int adc = 0;
 unsigned char setn = 0;
 
-void che_Init() 
-{ 
+void che_Init()
+{
 
-	
-	 GPIO_InitTypeDef  GPIO_InitStructure;
- 	
-   RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);	 //Ê¹ÄÜPB¶Ë¿ÚÊ±ÖÓ
-	
-		GPIO_InitStructure.GPIO_Pin=GPIO_Pin_10;  //ÅäÖÃIO¿Ú
-   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP; 		
-   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;		 //IO¿ÚËÙ¶ÈÎª50MHz
-   GPIO_Init(GPIOB, &GPIO_InitStructure);		
+	GPIO_InitTypeDef GPIO_InitStructure;
+
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE); // Ê¹ï¿½ï¿½PBï¿½Ë¿ï¿½Ê±ï¿½ï¿½
+
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10; // ï¿½ï¿½ï¿½ï¿½IOï¿½ï¿½
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz; // IOï¿½ï¿½ï¿½Ù¶ï¿½Îª50MHz
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
 }
 
-
-void KEY_SCAN(void)//°´¼üÉ¨Ãè
+void KEY_SCAN(void) // ï¿½ï¿½ï¿½ï¿½É¨ï¿½ï¿½
 {
-	  if(!KEY1)//ÉèÖÃ¼ü
+	if (!KEY1) // ï¿½ï¿½ï¿½Ã¼ï¿½
+	{
+		delay_ms(10); // ï¿½ï¿½ï¿½ï¿½
+		if (!KEY1)
 		{
-		   delay_ms(10);//Ïû¶¶
-			 if(!KEY1)
-		   {
-					while(!KEY1);//µÈ´ý°´¼üËÉ¿ª
-					setn++;
-				  if(setn > 2)
-					{
-							setn = 0;
-						LCD_Write_String(0,0,"Temperature:   C");
-						LCD_Write_String(0,1,"Wrtb:    ");
-						LCD_Write_String(9,1,(u8*)"PH:  ");
-					}
-					if(setn == 1)
-					{
-             LCD_Clear();
-						 LCD_Write_String(0,0,"====Set Temp====");
-							
-						 LCD_Write_Char(7,1, T_max/10+0x30);//ÎÂ¶ÈÉÏÏÞ
-							LCD_Write_Char(8,1, T_max%10+0x30);
-							LCD_Write_Char(9,1,'C');
-					}
-					if(setn == 2)
-					{
-						  	LCD_Write_String(0,0,"====Set Wrtb====");
-							LCD_Write_String(0,1,"       00%      ");
-								LCD_Write_Char(6,1, Wrtb_Max/1000%10+0x30);
-							LCD_Write_Char(7,1, Wrtb_Max/100%10+0x30);
-							LCD_Write_Char(8,1, Wrtb_Max/10%10+0x30);
-							LCD_Write_Char(9,1, Wrtb_Max%10+0x30);
-					}
-		   }
-		 }
-    if(!KEY2)//¼Ó¼ü
+			while (!KEY1)
+				; // ï¿½È´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¿ï¿½
+			setn++;
+			if (setn > 2)
+			{
+				setn = 0;
+				LCD_Write_String(0, 0, "Temperature:   C");
+				LCD_Write_String(0, 1, "Wrtb:    ");
+				LCD_Write_String(9, 1, (u8 *)"PH:  ");
+			}
+			if (setn == 1)
+			{
+				LCD_Clear();
+				LCD_Write_String(0, 0, "====Set Temp====");
+
+				LCD_Write_Char(7, 1, T_max / 10 + 0x30); // ï¿½Â¶ï¿½ï¿½ï¿½ï¿½ï¿½
+				LCD_Write_Char(8, 1, T_max % 10 + 0x30);
+				LCD_Write_Char(9, 1, 'C');
+			}
+			if (setn == 2)
+			{
+				LCD_Write_String(0, 0, "====Set Wrtb====");
+				LCD_Write_String(0, 1, "       00%      ");
+				LCD_Write_Char(6, 1, Wrtb_Max / 1000 % 10 + 0x30);
+				LCD_Write_Char(7, 1, Wrtb_Max / 100 % 10 + 0x30);
+				LCD_Write_Char(8, 1, Wrtb_Max / 10 % 10 + 0x30);
+				LCD_Write_Char(9, 1, Wrtb_Max % 10 + 0x30);
+			}
+		}
+	}
+	if (!KEY2) // ï¿½Ó¼ï¿½
+	{
+		delay_ms(10);
+		if (!KEY2)
 		{
-		   delay_ms(10);
-			 if(!KEY2)
-		   {
-					while(!KEY2);//µÈ´ý°´¼üËÉ¿ª
-					if(setn == 1)
-					{
-						  if(T_max < 99)T_max++;
-							LCD_Write_Char(7,1,'0'+T_max/10);
-						  LCD_Write_Char(8,1,'0'+T_max%10);
-					}
-					if(setn == 2)
-					{
-						  if(Wrtb_Max < 99)Wrtb_Max++;
-						if(Wrtb_Max < 3500)
-								Wrtb_Max = Wrtb_Max + 10;
-								
-								LCD_Write_Char(6,1, Wrtb_Max/1000%10+0x30);
-								LCD_Write_Char(7,1, Wrtb_Max/100%10+0x30);
-								LCD_Write_Char(8,1, Wrtb_Max/10%10+0x30);
-								LCD_Write_Char(9,1, Wrtb_Max%10+0x30);
-					}
-		   }
-		 }
-    if(!KEY3)//¼õ¼ü
+			while (!KEY2)
+				; // ï¿½È´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¿ï¿½
+			if (setn == 1)
+			{
+				if (T_max < 99)
+					T_max++;
+				LCD_Write_Char(7, 1, '0' + T_max / 10);
+				LCD_Write_Char(8, 1, '0' + T_max % 10);
+			}
+			if (setn == 2)
+			{
+				if (Wrtb_Max < 99)
+					Wrtb_Max++;
+				if (Wrtb_Max < 3500)
+					Wrtb_Max = Wrtb_Max + 10;
+
+				LCD_Write_Char(6, 1, Wrtb_Max / 1000 % 10 + 0x30);
+				LCD_Write_Char(7, 1, Wrtb_Max / 100 % 10 + 0x30);
+				LCD_Write_Char(8, 1, Wrtb_Max / 10 % 10 + 0x30);
+				LCD_Write_Char(9, 1, Wrtb_Max % 10 + 0x30);
+			}
+		}
+	}
+	if (!KEY3) // ï¿½ï¿½ï¿½ï¿½
+	{
+		delay_ms(10);
+		if (!KEY3)
 		{
-		   delay_ms(10);
-			 if(!KEY3)
-		   {
-					while(!KEY3);//µÈ´ý°´¼üËÉ¿ª
-		      if(setn == 1)
-					{
-						  if(T_max > 0)T_max--;
-							LCD_Write_Char(7,1,'0'+T_max/10);
-						  LCD_Write_Char(8,1,'0'+T_max%10);
-					}
-					if(setn == 2)
-					{
-						 if(Wrtb_Max > 0)
-								Wrtb_Max = Wrtb_Max - 10;
-								
-								LCD_Write_Char(6,1, Wrtb_Max/1000%10+0x30);
-								LCD_Write_Char(7,1, Wrtb_Max/100%10+0x30);
-								LCD_Write_Char(8,1, Wrtb_Max/10%10+0x30);
-								LCD_Write_Char(9,1, Wrtb_Max%10+0x30);
-					}
-		   }
-		 }		 
+			while (!KEY3)
+				; // ï¿½È´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¿ï¿½
+			if (setn == 1)
+			{
+				if (T_max > 0)
+					T_max--;
+				LCD_Write_Char(7, 1, '0' + T_max / 10);
+				LCD_Write_Char(8, 1, '0' + T_max % 10);
+			}
+			if (setn == 2)
+			{
+				if (Wrtb_Max > 0)
+					Wrtb_Max = Wrtb_Max - 10;
+
+				LCD_Write_Char(6, 1, Wrtb_Max / 1000 % 10 + 0x30);
+				LCD_Write_Char(7, 1, Wrtb_Max / 100 % 10 + 0x30);
+				LCD_Write_Char(8, 1, Wrtb_Max / 10 % 10 + 0x30);
+				LCD_Write_Char(9, 1, Wrtb_Max % 10 + 0x30);
+			}
+		}
+	}
 }
 
-u8 biaozhiwei=0;
-void Get_PH(void)    //»ñÈ¡PH
+u8 biaozhiwei = 0;
+void Get_PH(void) // ï¿½ï¿½È¡PH
 {
-		float ph_ad;
-	
-		ph_ad = Get_Adc_Average(ADC_Channel_8,20);//È¡20´ÎÆ½¾ùÖµ
-		PH = (ph_ad*3.3/4096);
-		PH = PH * 5.9647;
-		PH = 22.255 - PH;
-		PH = PH * 100;						
-		if(PH > 1400)PH = 1400;
+	float ph_ad;
+
+	ph_ad = Get_Adc_Average(ADC_Channel_8, 20); // È¡20ï¿½ï¿½Æ½ï¿½ï¿½Öµ
+	PH = (ph_ad * 3.3 / 4096);
+	PH = PH * 5.9647;
+	PH = 22.255 - PH;
+	PH = PH * 100;
+	if (PH > 1400)
+		PH = 1400;
 }
 int main(void)
-{		
-		 u8 count = 0;
-		delay_init();	    	 //ÑÓÊ±º¯Êý³õÊ¼»¯	   
-		NVIC_Configuration(); 	 //ÉèÖÃNVICÖÐ¶Ï·Ö×é2:2Î»ÇÀÕ¼ÓÅÏÈ¼¶£¬2Î»ÏìÓ¦ÓÅÏÈ¼¶  		
-		TIM3_Int_Init(9999,7199);//10KhzµÄ¼ÆÊýÆµÂÊ£¬¼ÆÊýµ½10000Îª1000msÎª1s 
-	  LCD_Init();    //1602³õÊ¼»¯
-		Adc_Init();		  		//ADC³õÊ¼»¯	
-	  fengmingqi_Init();  //°´¼ü³õÊ¼»¯
-	  RELAY_Init();//¼ÌµçÆ÷³õÊ¼»¯
-	  BEEP_GPIO_Config(); //·äÃùÆ÷³õÊ¼»¯
-		KEY_IO_Init();
-	  MOTOR_GPIO_Init();   // µç»ú³õÊ¼»¯
-  	che_Init();
-	
-		 ESP8266_Init();	
-		while(DS18B20_Init())//ds18b20³õÊ¼»¯
+{
+	u8 count = 0;
+	delay_init();			   // ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½
+	NVIC_Configuration();	   // ï¿½ï¿½ï¿½ï¿½NVICï¿½Ð¶Ï·ï¿½ï¿½ï¿½2:2Î»ï¿½ï¿½Õ¼ï¿½ï¿½ï¿½È¼ï¿½ï¿½ï¿½2Î»ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½È¼ï¿½
+	TIM3_Int_Init(9999, 7199); // 10Khzï¿½Ä¼ï¿½ï¿½ï¿½Æµï¿½Ê£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½10000Îª1000msÎª1s
+	LCD_Init();				   // 1602ï¿½ï¿½Ê¼ï¿½ï¿½
+	Adc_Init();				   // ADCï¿½ï¿½Ê¼ï¿½ï¿½
+	fengmingqi_Init();		   // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½
+	RELAY_Init();			   // ï¿½Ìµï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½
+	BEEP_GPIO_Config();		   // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½
+	KEY_IO_Init();
+	MOTOR_GPIO_Init(); // ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½
+	che_Init();
+
+	ESP8266_Init();
+	while (DS18B20_Init()) // ds18b20ï¿½ï¿½Ê¼ï¿½ï¿½
+	{
+		LCD_Write_String(0, 0, (u8 *)"  DS18B20 Erro  ");
+		LCD_Write_String(0, 1, "                ");
+	}
+	DS18B20_Get_Temp(); // ï¿½ï¿½È¡ï¿½Â¶ï¿½
+	LCD_Write_String(0, 0, "Temperature:   C");
+	LCD_Write_String(0, 1, (u8 *)"Wrtb:    ");
+	LCD_Write_String(9, 1, (u8 *)"PH:");
+	TIM_Cmd(TIM3, ENABLE); // Ê¹ï¿½ï¿½TIMx
+	while (1)
+	{
+		KEY_SCAN();
+		if (count++ >= 100 && setn == 0)
 		{
-			LCD_Write_String(0,0,(u8*)"  DS18B20 Erro  ");
-			LCD_Write_String(0,1,"                ");
-		}
-		DS18B20_Get_Temp();//¶ÁÈ¡ÎÂ¶È
-		LCD_Write_String(0,0,"Temperature:   C");
-		LCD_Write_String(0,1,(u8*)"Wrtb:    ");
-		LCD_Write_String(9,1,(u8*)"PH:");
-		TIM_Cmd(TIM3,ENABLE);  //Ê¹ÄÜTIMx
-		while(1)
-		{
-			  KEY_SCAN();
-			  if(count++ >= 100 && setn == 0)
+			count = 0;
+
+			if (cnt++ > 10)
+			{
+				cnt = 0;
+				usart_send_flag = 1;
+			}
+			temperature = DS18B20_Get_Temp(); // ï¿½ï¿½È¡ï¿½Â¶ï¿½
+			if (temperature < 0)
+			{
+				LCD_Write_Char(12, 0, '-'); // ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½
+				temperature = -temperature; // ×ªÎªï¿½ï¿½ï¿½ï¿½
+			}
+			else
+				LCD_Write_Char(12, 0, ' '); // È¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+			// ï¿½ï¿½Ê¾ï¿½Â¶ï¿½
+			LCD_Write_Char(12, 0, temperature / 100 + '0');
+			LCD_Write_Char(13, 0, temperature % 100 / 10 + '0');
+
+			send_data[15] = temperature / 100 + '0';
+			send_data[16] = temperature / 100 + '0';
+
+			Get_PH();
+			adcx = Get_Adc_Average(ADC_Channel_9, 20); // ï¿½ï¿½È¡Í¨ï¿½ï¿½9ï¿½ï¿½ADÖµï¿½ï¿½20MSï¿½ï¿½È¡Ò»ï¿½ï¿½
+			//***********************ï¿½ï¿½ï¿½ï¿½Ë®ï¿½Ç¶ï¿½****************************//
+			T = adcx;
+			T = T * (3.3 / 4096) + 1.72;
+			if (T < 2.5)
+			{
+				T = 3000;
+			}
+			else
+			{
+				// Tul=-0.43*Tul*Tul+112.6*Tul-85.35;
+				T = (-1120.4 * T * T + 5742.3 * T - 4352.9); // Tulï¿½ï¿½ADÖµ
+			}
+			if (T < 0)
+			{
+				T = 0;
+			}
+			adcx = (u16)T;
+			// ï¿½ï¿½Ê¾Ë®ï¿½Ç¶ï¿½
+			LCD_Write_Char(5, 1, adcx / 1000 % 10 + 0x30);
+			LCD_Write_Char(6, 1, adcx / 100 % 10 + 0x30);
+			LCD_Write_Char(7, 1, adcx / 10 % 10 + 0x30);
+			LCD_Write_Char(8, 1, adcx % 10 + 0x30);
+
+			send_data[5] = adcx / 1000 % 10 + 0x30;
+			send_data[6] = adcx / 100 % 10 + 0x30;
+			send_data[7] = adcx / 10 % 10 + 0x30;
+			send_data[8] = adcx % 10 + 0x30;
+			// PH
+			PH1 = ((int)PH / 100 + '0');
+			PH2 = ((int)PH % 100 / 10 + '0');
+
+			LCD_Write_Char(12, 1, PH1);
+			LCD_Write_String(13, 1, (u8 *)".");
+			LCD_Write_Char(14, 1, PH2);
+
+			if (adcx >= Wrtb_Max || temperature / 10 >= T_max) // ï¿½ï¿½ï¿½Þ·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+			{
+				BEEP = 1;
+				BJ_LED = 1;
+			}
+			else
+			{
+				BEEP = 0;
+				BJ_LED = 0;
+			}
+
+			if (!KEY4) // ï¿½ï¿½ï¿½ï¿½
+			{
+				delay_ms(10);
+				if (!KEY4)
 				{
-						count = 0;
-					
-					 if(cnt++ > 10)
-						{
-								cnt = 0;
-							  usart_send_flag = 1;
-						}					
-						temperature = DS18B20_Get_Temp();//¶ÁÈ¡ÎÂ¶È
-						if(temperature<0)
-						{
-							LCD_Write_Char(12,0,'-');			//ÏÔÊ¾¸ººÅ
-							temperature=-temperature;					//×ªÎªÕýÊý
-						}else LCD_Write_Char(12,0,' ');			//È¥µô¸ººÅ
-						//ÏÔÊ¾ÎÂ¶È
-						LCD_Write_Char(12,0,temperature/100+'0');
-						LCD_Write_Char(13,0,temperature%100/10+'0');
-						
-						send_data[15] =temperature/100+'0';
-					  send_data[16] =temperature/100+'0';
-						
-	
-						Get_PH() ;
-						adcx = Get_Adc_Average(ADC_Channel_9,20);//¶ÁÈ¡Í¨µÀ9µÄADÖµ£¬20MS¶ÁÈ¡Ò»´Î
-						//***********************¼ÆËãË®×Ç¶È****************************//
-						T = adcx;
-						T = T*(3.3/4096)+1.72;
-						if(T < 2.5)
-						{
-								T = 3000;	
-						}
-						else 
-						{
-								//Tul=-0.43*Tul*Tul+112.6*Tul-85.35;
-								T = (-1120.4*T*T+5742.3*T-4352.9);	//TulÊÇADÖµ
-						}
-						if(T < 0)
-						{
-							T = 0;
-						}
-						adcx = (u16)T;
-						//ÏÔÊ¾Ë®×Ç¶È
-						LCD_Write_Char(5,1, adcx/1000%10+0x30);
-						LCD_Write_Char(6,1, adcx/100%10+0x30);
-						LCD_Write_Char(7,1, adcx/10%10+0x30);
-						LCD_Write_Char(8,1, adcx%10+0x30);
-						
-					  send_data[5] =adcx/1000%10+0x30;
-					  send_data[6] = adcx/100%10+0x30;
-					  send_data[7] = adcx/10%10+0x30;
-						send_data[8] = adcx%10+0x30;
-						//PH
-						PH1=((int)PH/100+'0');
-						PH2=((int)PH%100/10+'0');
-						
-						LCD_Write_Char(12,1,PH1);
-						LCD_Write_String(13,1,(u8*)".");
-						LCD_Write_Char(14,1,PH2);
-						
-						
-						if(adcx >= Wrtb_Max || temperature/10 >= T_max)//³¬ÏÞ·äÃùÆ÷±¨¾¯
-						{
-								BEEP = 1;
-								BJ_LED =1;
-						}
-						else
-						{
-								BEEP = 0;
-								BJ_LED =0;
-						}
-						
-						if(!KEY4)//¼õ¼ü
-						{
-						   delay_ms(10);
-							 if(!KEY4)
-							 {
-									biaozhiwei=!biaozhiwei;
-									while(!KEY4);//µÈ´ý°´¼üËÉ¿ª
-								}
-						}
-						if( biaozhiwei==0||led==10)
-						{
-						   juli=0;
-						}
-						if( biaozhiwei==1||led==11)
-						{
-						    juli=1;
-						}
-						if(fen==fen_flag&&shi==shi_flag)//¼ÆÊ±Ê±¼äµ½±¨¾¯
-		          {
-							BEEP=1;
-							delay_ms(2000);
-							BEEP=0;
-		          MotorCW();
-				      fen =0;
-				      shi=0;
-							TIM_Cmd(TIM3,ENABLE);  //Ê¹ÄÜTIMx	
-		          }	
+					biaozhiwei = !biaozhiwei;
+					while (!KEY4)
+						; // ï¿½È´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¿ï¿½
 				}
+			}
+			if (biaozhiwei == 0 || led == 10)
+			{
+				juli = 0;
+			}
+			if (biaozhiwei == 1 || led == 11)
+			{
+				juli = 1;
+			}
+			if (fen == fen_flag && shi == shi_flag) // ï¿½ï¿½Ê±Ê±ï¿½äµ½ï¿½ï¿½ï¿½ï¿½
+			{
+				BEEP = 1;
+				delay_ms(2000);
+				BEEP = 0;
+				MotorCW();
+				fen = 0;
+				shi = 0;
+				TIM_Cmd(TIM3, ENABLE); // Ê¹ï¿½ï¿½TIMx
+			}
 		}
+	}
 }
-
-
